@@ -7,6 +7,11 @@ const app = express();
 
 app.use(express.json());
 
+// rota raiz
+app.get('/', (req, res) => {
+  res.status(200).send('API online');
+});
+
 app.use('/health', healthRoutes);
 app.use('/reports', reportsRoutes);
 app.use('/webhooks', webhookRoutes);
