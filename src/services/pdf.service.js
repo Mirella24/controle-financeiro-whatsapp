@@ -26,7 +26,6 @@ async function gerarPdfPessoa(nomePessoa, lancamentos) {
 
     doc.fontSize(18).text(`Relatório de ${nomePessoa}`, { align: 'center' });
     doc.moveDown();
-
     doc.fontSize(12).text(`Quantidade de lançamentos: ${lancamentos.length}`);
     doc.text(`Total final: ${formatarMoeda(total)}`);
     doc.moveDown();

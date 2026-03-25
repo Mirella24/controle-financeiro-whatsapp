@@ -40,9 +40,8 @@ function converterDataOuUsarHoje(dataTexto) {
   return `${ano}-${mes}-${dia}`;
 }
 
-async function salvarLancamento(dados) {
+async function salvarLancamento(dados, origem = 'TWILIO') {
   const pessoa = await buscarOuCriarPessoa(dados.nome, dados.nomeNormalizado);
-
   const dataFinal = converterDataOuUsarHoje(dados.dataTexto);
 
   const resultado = await db.query(
@@ -63,7 +62,7 @@ async function salvarLancamento(dados) {
       dados.descricao,
       dados.valor,
       dataFinal,
-      'TESTE',
+      origem,
       dados.rawText || null
     ]
   );

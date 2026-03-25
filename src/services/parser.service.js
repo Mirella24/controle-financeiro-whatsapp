@@ -45,7 +45,8 @@ function parseMensagem(texto) {
     nomeNormalizado: normalizar(nome),
     descricao,
     valor,
-    dataTexto
+    dataTexto,
+    rawText: bruto
   };
 }
 
