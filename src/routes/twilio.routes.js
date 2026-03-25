@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { receberTwilioWebhook } = require('../controllers/twilio.controller');
 
-router.post('/whatsapp', receberTwilioWebhook);
+router.post('/whatsapp', (req, res) => {
+  return res.status(200).json({
+    ok: true,
+    rota: '/twilio/whatsapp',
+    body: req.body
+  });
+});
 
 module.exports = router;

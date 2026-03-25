@@ -13,13 +13,6 @@ app.get('/', (req, res) => {
   res.send('TESTE RENDER 999');
 });
 
-app.post('/teste-post', (req, res) => {
-  return res.status(200).json({
-    ok: true,
-    mensagem: 'POST funcionando'
-  });
-});
-
 app.use('/public/pdfs', express.static(path.resolve(process.cwd(), 'storage', 'pdfs')));
 
 app.use('/health', healthRoutes);
