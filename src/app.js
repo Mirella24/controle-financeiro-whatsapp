@@ -10,7 +10,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('API online');
+  res.send('API ONLINE NOVA');
 });
 
 app.use('/public/pdfs', express.static(path.resolve(process.cwd(), 'storage', 'pdfs')));
