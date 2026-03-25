@@ -5,29 +5,16 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.status(200).send('SERVER OK');
-});
-
-app.post('/', (req, res) => {
-  res.status(200).json({
-    ok: true,
-    rota: '/',
-    body: req.body
-  });
-});
-
-app.post('/abc', (req, res) => {
-  res.status(200).json({
-    ok: true,
-    rota: '/abc',
-    body: req.body
-  });
+  res.send('SERVER OK');
 });
 
 app.post('/twilio/whatsapp', (req, res) => {
-  res.status(200).json({
+  console.log('TWILIO BATEU AQUI');
+  console.log('BODY:', req.body);
+
+  return res.status(200).json({
     ok: true,
-    rota: '/twilio/whatsapp',
+    recebido: true,
     body: req.body
   });
 });
