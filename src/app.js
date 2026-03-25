@@ -10,7 +10,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('API ONLINE NOVA');
+  res.send('TESTE RENDER 999');
 });
 
 app.post('/teste-post', (req, res) => {
