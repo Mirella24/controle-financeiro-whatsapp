@@ -5,6 +5,7 @@ const {
   enviarTextoWhatsApp,
   enviarPdfWhatsApp
 } = require('../services/twilio.service');
+const { baseUrl } = require('../config/env');
 
 async function receberTwilioWebhook(req, res, next) {
   try {
@@ -48,7 +49,7 @@ async function receberTwilioWebhook(req, res, next) {
         return res.status(200).send('ok');
       }
 
-      const mediaUrl = `${process.env.BASE_URL}/public/pdfs/${relatorio.pdf.nomeArquivo}`;
+      const mediaUrl = `${baseUrl}/public/pdfs/${relatorio.pdf.nomeArquivo}`;
 
       await enviarPdfWhatsApp(
         from,

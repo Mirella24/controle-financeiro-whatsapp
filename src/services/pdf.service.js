@@ -32,7 +32,6 @@ async function gerarPdfPessoa(nomePessoa, lancamentos) {
 
     lancamentos.forEach((item, index) => {
       const data = new Date(item.launch_date).toLocaleDateString('pt-BR');
-
       doc.text(
         `${index + 1}. ${data} | ${item.description} | ${formatarMoeda(item.amount)}`
       );
