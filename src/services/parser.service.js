@@ -8,6 +8,10 @@ function parseMensagem(texto) {
   const bruto = texto.trim();
   const textoNormalizado = normalizar(bruto);
 
+  if (!bruto) {
+    return { tipo: 'ignorar' };
+  }
+
   if (textoNormalizado.startsWith('pdf ')) {
     const nome = bruto.slice(4).trim();
 
@@ -24,7 +28,7 @@ function parseMensagem(texto) {
 
   const linhas = bruto
     .split('\n')
-    .map(linha => linha.trim())
+    .map((linha) => linha.trim())
     .filter(Boolean);
 
   if (linhas.length < 3) {

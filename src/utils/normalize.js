@@ -6,4 +6,12 @@ function normalizar(texto = '') {
     .trim();
 }
 
-module.exports = { normalizar };
+function extrairNumeroWhatsApp(remoteJid = '') {
+  if (!remoteJid) return '';
+  return String(remoteJid).split('@')[0].replace(/\D/g, '');
+}
+
+module.exports = {
+  normalizar,
+  extrairNumeroWhatsApp
+};
