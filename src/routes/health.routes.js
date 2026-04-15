@@ -1,11 +1,8 @@
-const express = require('express');
-const router = express.Router();
+import { Router } from 'express';
+import { healthCheck } from '../controllers/health.controller.js';
 
-router.get('/', (req, res) => {
-  res.status(200).json({
-    ok: true,
-    message: 'Servidor rodando'
-  });
-});
+const router = Router();
 
-module.exports = router;
+router.get('/health', healthCheck);
+
+export default router;

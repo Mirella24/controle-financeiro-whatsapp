@@ -1,18 +1,18 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
 
-module.exports = {
-  db: {
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT || 5432),
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD
-  },
-  twilio: {
-    accountSid: process.env.TWILIO_ACCOUNT_SID,
-    authToken: process.env.TWILIO_AUTH_TOKEN,
-    from: process.env.TWILIO_WHATSAPP_FROM
-  },
-  baseUrl: process.env.BASE_URL,
-  port: process.env.PORT || 3000
+dotenv.config();
+
+export const env = {
+  port: process.env.PORT || 3000,
+
+  supabaseUrl: process.env.SUPABASE_URL || '',
+  supabaseSecretKey: process.env.SUPABASE_SECRET_KEY || '',
+
+  evolutionApiUrl: process.env.EVOLUTION_API_URL || '',
+  evolutionApiKey: process.env.EVOLUTION_API_KEY || '',
+  evolutionInstance: process.env.EVOLUTION_INSTANCE || '',
+
+  allowedNumbers: process.env.ALLOWED_NUMBERS
+    ? process.env.ALLOWED_NUMBERS.split(',').map((item) => item.trim()).filter(Boolean)
+    : []
 };

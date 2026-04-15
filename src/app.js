@@ -1,29 +1,24 @@
-const express = require('express');
-const path = require('path');
-const healthRoutes = require('./routes/health.routes');
-const reportsRoutes = require('./routes/reports.routes');
-const evolutionRoutes = require('./routes/evolution.routes');
+import express from 'express';
+import cors from 'cors';
+import healthRoutes from './routes/health.routes.js';
+import testRoutes from './routes/test.routes.js';
+import webhookRoutes from './routes/webhook.routes.js';
 
 const app = express();
 
-app.use(express.urlencoded({ extended: false }));
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  res.status(200).send('API online');
-});
-
-app.use('/public/pdfs', express.static(path.resolve(process.cwd(), 'storage', 'pdfs')));
-
-app.use('/health', healthRoutes);
-app.use('/reports', reportsRoutes);
-app.use('/evolution', evolutionRoutes);
-
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({
-    error: 'Erro interno no servidor.'
+  return res.status(200).json({
+    ok: true,
+    message: 'API online'
   });
 });
 
-module.exports = app;
+app.use('/', healthRoutes);
+app.use('/', testRoutes);
+app.use('/', webhookRoutes);
+
+export default app;

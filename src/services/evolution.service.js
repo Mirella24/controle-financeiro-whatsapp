@@ -1,72 +1,83 @@
-const axios = require('axios');
-const { evolution } = require('../config/env');
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+import { env } from '../config/env.js';
 
-const api = axios.create({
-  baseURL: evolution.baseUrl,
-  headers: {
-    apikey: evolution.apiKey,
+export async function sendTextMessage({ number, text }) {
+  if (!env.evolutionApiUrl || !env.evolutionApiKey || !env.evolutionInstance) {
+    throw new Error('Evolution API não configurada no .env');
+  }
+
+  const url = `${env.evolutionApiUrl}/message/sendText/${env.evolutionInstance}`;
+
+  const payload = {
+    number,
+    textMessage: {
+      text
+    }
+  };
+
+  const headers = {
+    apikey: env.evolutionApiKey,
     'Content-Type': 'application/json'
-  },
-  timeout: 30000
-});
+  };
 
-async function enviarTexto(numero, texto) {
-  return api.post(`/message/sendText/${evolution.instance}`, {
-    number: numero,
-    text: texto,
-    delay: 1200,
-    linkPreview: false
+  console.log('Enviando resposta para WhatsApp:', {
+    url,
+    payload
   });
+
+  const { data } = await axios.post(url, payload, { headers });
+
+  console.log('Resposta da Evolution ao enviar mensagem:', data);
+
+  return data;
 }
 
-async function enviarDocumento(numero, mediaUrl, fileName, caption = '') {
-  return api.post(`/message/sendMedia/${evolution.instance}`, {
-    number: numero,
-    mediatype: 'document',
-    mimetype: 'application/pdf',
-    caption,
-    media: mediaUrl,
-    fileName,
-    delay: 1200
+export async function sendDocumentMessage({
+  number,
+  filePath,
+  fileName,
+  caption = ''
+}) {
+  if (!env.evolutionApiUrl || !env.evolutionApiKey || !env.evolutionInstance) {
+    throw new Error('Evolution API não configurada no .env');
+  }
+
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Arquivo não encontrado: ${filePath}`);
+  }
+
+  const fileBase64 = fs.readFileSync(filePath, { encoding: 'base64' });
+  const mimetype = 'application/pdf';
+
+  const url = `${env.evolutionApiUrl}/message/sendMedia/${env.evolutionInstance}`;
+
+  const payload = {
+    number,
+    mediaMessage: {
+      mediatype: 'document',
+      mimetype,
+      fileName,
+      caption,
+      media: fileBase64
+    }
+  };
+
+  const headers = {
+    apikey: env.evolutionApiKey,
+    'Content-Type': 'application/json'
+  };
+
+  console.log('Enviando PDF para WhatsApp:', {
+    url,
+    number,
+    fileName
   });
-}
 
-async function criarInstancia() {
-  return api.post('/instance/create', {
-    instanceName: evolution.instance,
-    integration: 'WHATSAPP-BAILEYS',
-    qrcode: true,
-    number: ''
-  });
-}
+  const { data } = await axios.post(url, payload, { headers });
 
-async function conectarInstancia() {
-  return api.get(`/instance/connect/${evolution.instance}`);
-}
+  console.log('Resposta da Evolution ao enviar PDF:', data);
 
-async function configurarWebhook(urlWebhook) {
-  return api.post(`/webhook/set/${evolution.instance}`, {
-    enabled: true,
-    url: urlWebhook,
-    webhookByEvents: false,
-    webhookBase64: false,
-    events: [
-      'MESSAGES_UPSERT',
-      'CONNECTION_UPDATE',
-      'QRCODE_UPDATED'
-    ]
-  });
+  return data;
 }
-
-async function buscarWebhook() {
-  return api.get(`/webhook/find/${evolution.instance}`);
-}
-
-module.exports = {
-  enviarTexto,
-  enviarDocumento,
-  criarInstancia,
-  conectarInstancia,
-  configurarWebhook,
-  buscarWebhook
-};
