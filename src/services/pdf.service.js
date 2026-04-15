@@ -28,6 +28,18 @@ function ensurePdfDirectory() {
   return pdfDir;
 }
 
+function drawFooter(doc) {
+  const footerY = doc.page.height - 35;
+
+  doc
+    .font('Helvetica')
+    .fontSize(9)
+    .text('Relatório gerado automaticamente pelo sistema', 50, footerY, {
+      width: 495,
+      align: 'center'
+    });
+}
+
 function drawHeader(doc, personName, totalEntries, totalValue) {
   doc
     .font('Helvetica-Bold')
@@ -58,69 +70,111 @@ function drawHeader(doc, personName, totalEntries, totalValue) {
   return 200;
 }
 
-function drawTableHeader(doc, y) {
-  doc.rect(50, y, 495, 24).stroke();
+function drawTableHeader(doc, y, columns) {
+  const { x, dateW, descW, valueW, rowH } = columns;
+  const totalW = dateW + descW + valueW;
+
+  doc.rect(x, y, totalW, rowH).stroke();
+
+  doc
+    .moveTo(x + dateW, y)
+    .lineTo(x + dateW, y + rowH)
+    .stroke();
+
+  doc
+    .moveTo(x + dateW + descW, y)
+    .lineTo(x + dateW + descW, y + rowH)
+    .stroke();
 
   doc
     .font('Helvetica-Bold')
     .fontSize(10)
-    .text('Data', 60, y + 7, { width: 70 })
-    .text('Descrição', 140, y + 7, { width: 250 })
-    .text('Valor', 430, y + 7, { width: 100, align: 'right' });
+    .text('Data', x + 8, y + 8, { width: dateW - 16 })
+    .text('Descrição', x + dateW + 8, y + 8, { width: descW - 16 })
+    .text('Valor', x + dateW + descW + 8, y + 8, {
+      width: valueW - 16,
+      align: 'right'
+    });
 
-  return y + 24;
+  return y + rowH;
 }
 
-function getRowHeight(doc, description) {
+function getRowHeight(doc, description, columns) {
   const textHeight = doc.heightOfString(description, {
-    width: 250,
+    width: columns.descW - 16,
     align: 'left'
   });
 
-  return Math.max(28, textHeight + 12);
+  return Math.max(28, textHeight + 14);
 }
 
-function createNewPage(doc, personName, totalEntries, totalValue) {
+function createNewPage(doc, personName, totalEntries, totalValue, columns) {
   doc.addPage();
-  const y = drawHeader(doc, personName, totalEntries, totalValue);
-  return drawTableHeader(doc, y);
+  let y = drawHeader(doc, personName, totalEntries, totalValue);
+  y = drawTableHeader(doc, y, columns);
+  return y;
 }
 
-function drawRows(doc, entries, startY, personName, totalEntries, totalValue) {
+function drawRow(doc, y, entry, rowHeight, columns) {
+  const { x, dateW, descW, valueW } = columns;
+  const totalW = dateW + descW + valueW;
+
+  doc.rect(x, y, totalW, rowHeight).stroke();
+
+  doc
+    .moveTo(x + dateW, y)
+    .lineTo(x + dateW, y + rowHeight)
+    .stroke();
+
+  doc
+    .moveTo(x + dateW + descW, y)
+    .lineTo(x + dateW + descW, y + rowHeight)
+    .stroke();
+
+  doc
+    .font('Helvetica')
+    .fontSize(10)
+    .text(formatDateBR(entry.entry_date), x + 8, y + 8, {
+      width: dateW - 16
+    })
+    .text(entry.description, x + dateW + 8, y + 8, {
+      width: descW - 16
+    })
+    .text(formatCurrency(entry.amount), x + dateW + descW + 8, y + 8, {
+      width: valueW - 16,
+      align: 'right'
+    });
+}
+
+function drawRows(doc, entries, startY, personName, totalEntries, totalValue, columns) {
   let y = startY;
   const bottomLimit = doc.page.height - 90;
 
   if (entries.length === 0) {
+    const totalW = columns.dateW + columns.descW + columns.valueW;
+
+    doc.rect(columns.x, y, totalW, 35).stroke();
+
     doc
       .font('Helvetica')
       .fontSize(11)
-      .text('Nenhum lançamento encontrado.', 50, y + 15, {
-        width: 495,
+      .text('Nenhum lançamento encontrado.', columns.x, y + 11, {
+        width: totalW,
         align: 'center'
       });
 
-    return y + 40;
+    return y + 35;
   }
 
   for (const entry of entries) {
-    const rowHeight = getRowHeight(doc, entry.description);
+    const rowHeight = getRowHeight(doc, entry.description, columns);
 
     if (y + rowHeight > bottomLimit) {
-      y = createNewPage(doc, personName, totalEntries, totalValue);
+      drawFooter(doc);
+      y = createNewPage(doc, personName, totalEntries, totalValue, columns);
     }
 
-    doc.rect(50, y, 495, rowHeight).stroke();
-
-    doc
-      .font('Helvetica')
-      .fontSize(10)
-      .text(formatDateBR(entry.entry_date), 60, y + 8, { width: 70 })
-      .text(entry.description, 140, y + 8, { width: 250 })
-      .text(formatCurrency(entry.amount), 430, y + 8, {
-        width: 100,
-        align: 'right'
-      });
-
+    drawRow(doc, y, entry, rowHeight, columns);
     y += rowHeight;
   }
 
@@ -133,6 +187,7 @@ function drawTotal(doc, y, totalValue) {
   const x = 365;
 
   if (y + boxHeight + 20 > doc.page.height - 60) {
+    drawFooter(doc);
     doc.addPage();
     y = 60;
   }
@@ -157,6 +212,14 @@ export async function generatePersonReportPdf({ person, entries }) {
   const totalValue = entries.reduce((sum, item) => sum + Number(item.amount), 0);
   const totalEntries = entries.length;
 
+  const columns = {
+    x: 50,
+    dateW: 90,
+    descW: 285,
+    valueW: 120,
+    rowH: 28
+  };
+
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       margin: 50,
@@ -168,9 +231,10 @@ export async function generatePersonReportPdf({ person, entries }) {
     doc.pipe(stream);
 
     let currentY = drawHeader(doc, person.name, totalEntries, totalValue);
-    currentY = drawTableHeader(doc, currentY);
-    currentY = drawRows(doc, entries, currentY, person.name, totalEntries, totalValue);
+    currentY = drawTableHeader(doc, currentY, columns);
+    currentY = drawRows(doc, entries, currentY, person.name, totalEntries, totalValue, columns);
     drawTotal(doc, currentY, totalValue);
+    drawFooter(doc);
 
     doc.end();
 
