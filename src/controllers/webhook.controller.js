@@ -4,6 +4,7 @@ const { createEntry } = require("../services/entries.service");
 const { sendMessage, sendMedia } = require("../services/evolution.service");
 const { generatePersonReportPdf } = require("../services/pdf.service");
 const { supabase } = require("../config/supabase");
+const { formatCurrency } = require("../utils/formatCurrency");
 
 const processedMessages = new Set();
 
@@ -134,7 +135,13 @@ async function webhook(req, res) {
 
     console.log(`[${requestId}] ✅ SALVO:`, result);
 
-    await sendMessage(from, "✅ Lançamento salvo com sucesso!");
+    await sendMessage(from, 
+      `
+      ✅ Registrado.
+      📁 ${result[0].name}.
+      ✍🏻 ${result[0].description}.
+      💰 ${formatCurrency(result[0].amount)}
+      `);
 
     res.sendStatus(200);
 
