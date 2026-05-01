@@ -158,7 +158,7 @@ function drawRow(doc, y, entry, rowHeight, columns) {
   doc
     .font('Helvetica')
     .fontSize(10)
-    .text(formatDateBR(entry.entry_date), x + 8, y + 8, {
+    .text(entry.date, x + 8, y + 8, {
       width: dateW - 16
     })
     .text(entry.description, x + dateW + 8, y + 8, {
