@@ -1,9 +1,6 @@
 const axios = require("axios");
 const fs = require("fs");
 
-const BASE_URL = "http://212.192.2.44:8080";
-const INSTANCE = "mirella";
-const API_KEY = "123456";
 
 // =========================
 // 📩 ENVIAR TEXTO
@@ -13,7 +10,7 @@ async function sendMessage(to, message) {
     const number = to.split("@")[0];
 
     await axios.post(
-      `${BASE_URL}/message/sendText/${INSTANCE}`,
+      `${process.env.EVOLUTION_API_URL}/message/sendText/${process.env.EVOLUTION_INSTANCE}`,
       {
         number: "5518991391889",
         textMessage: {
@@ -22,7 +19,7 @@ async function sendMessage(to, message) {
       },
       {
         headers: {
-          apikey: API_KEY,
+          apikey: process.env.EVOLUTION_API_KEY,
           "Content-Type": "application/json"
         }
       }
@@ -56,7 +53,7 @@ async function sendMedia(to, filePath) {
     console.log("📦 Base64 gerado com sucesso");
 
     await axios.post(
-      `${BASE_URL}/message/sendMedia/${INSTANCE}`,
+      `${process.env.EVOLUTION_API_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`,
       {
         number: "5518991391889",
         mediaMessage: {
@@ -68,7 +65,7 @@ async function sendMedia(to, filePath) {
       },
       {
         headers: {
-          apikey: API_KEY,
+          apikey: process.env.EVOLUTION_API_KEY,
           "Content-Type": "application/json"
         }
       }
