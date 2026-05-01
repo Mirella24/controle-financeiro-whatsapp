@@ -2,7 +2,6 @@
   "name": "controle-financeiro-whatsapp",
   "version": "1.0.0",
   "description": "Sistema de controle financeiro via WhatsApp com Evolution API + Supabase",
-  "type": "module",
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
@@ -14,7 +13,8 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "pdfkit": "^0.17.2"
+    "pdfkit": "^0.17.2",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

@@ -1,50 +1,63 @@
-import { supabase } from '../config/supabase.js';
+const { supabase } = require("../config/supabase");
+const { getOrCreatePerson } = require("./people.service");
 
-export async function createEntry({
-  personId,
-  description,
-  amount,
-  entryDate
-}) {
-  const { data, error } = await supabase
-    .from('entries')
-    .insert([
-      {
-        person_id: personId,
-        description: description.trim(),
-        amount,
-        entry_date: entryDate
-      }
-    ])
-    .select()
-    .single();
+function formatarDataUTC(dataStr) {
+  const [dia, mes, ano] = dataStr.split('/');
 
-  if (error) {
-    throw new Error(`Erro ao criar lançamento: ${error.message}`);
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+
+  return data.toISOString();
+}
+
+async function createEntry(data) {
+  console.log("📦 SERVICE RECEBEU:", data);
+
+  if (!data.amount || isNaN(data.amount)) {
+    throw new Error("Valor inválido no service");
   }
 
-  return data;
-}
-
-export async function listEntriesByPerson(personId) {
-  const { data, error } = await supabase
-    .from('entries')
-    .select('*')
-    .eq('person_id', personId)
-    .order('entry_date', { ascending: true })
-    .order('created_at', { ascending: true });
-
-  if (error) {
-    throw new Error(`Erro ao listar lançamentos: ${error.message}`);
+  if (!data.description) {
+    throw new Error("Descrição obrigatória");
   }
 
-  return data ?? [];
+  const person = await getOrCreatePerson(data.name);
+
+  console.log("👤 DATA:", data);
+  console.log("👤 Pessoa:", person);
+
+  const entryData = {
+    name: data.name,
+    description: data.description,
+    amount: data.amount,
+    date: formatarDataUTC(data.date) || '2024-01-01T00:00:00Z',
+    person_id: person.id,
+    entry_date: new Date().toISOString()
+  };
+
+  console.log("📤 Enviando para Supabase:", entryData);
+
+  const { data: result, error } = await supabase
+    .from("entries")
+    .insert({
+      name: entryData.name,
+      description: entryData.description,
+      value: entryData.amount,
+      person_id: entryData.person_id,
+      date: entryData.date,
+      entry_date: entryData.entry_date,
+      message_id: 'Teste msg id',
+      amount: 10, 
+    })
+    .select();
+
+  if (error) {
+    console.log("❌ ERRO SUPABASE:", error);
+    throw error;
+  }
+
+  console.log("✅ SALVO NO BANCO:", result);
+
+  return result;
 }
 
-export async function sumEntriesByPerson(personId) {
-  const entries = await listEntriesByPerson(personId);
-
-  return entries.reduce((sum, item) => {
-    return sum + Number(item.amount);
-  }, 0);
-}
+module.exports = { createEntry };

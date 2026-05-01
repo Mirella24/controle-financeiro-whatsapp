@@ -1,11 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
-import { env } from './env.js';
+require("dotenv").config();
 
-if (!env.supabaseUrl || !env.supabaseSecretKey) {
-  console.warn('Supabase não configurado no .env');
-}
+const { createClient } = require("@supabase/supabase-js");
 
-export const supabase = createClient(
-  env.supabaseUrl,
-  env.supabaseSecretKey
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
 );
+
+module.exports = { supabase };

@@ -1,44 +1,23 @@
-import { supabase } from '../config/supabase.js';
-import { normalizeText } from '../utils/normalizeText.js';
+const { supabase } = require("../config/supabase");
 
-export async function findPersonByName(name) {
-  const normalizedName = normalizeText(name);
+async function getOrCreatePerson(name) {
+  const { data: existing } = await supabase
+    .from("people")
+    .select("*")
+    .eq("name", name)
+    .single();
 
-  const { data, error } = await supabase
-    .from('people')
-    .select('*')
-    .eq('name', normalizedName)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Erro ao buscar pessoa: ${error.message}`);
-  }
-
-  return data;
-}
-
-export async function createPerson(name) {
-  const normalizedName = normalizeText(name);
+  if (existing) return existing;
 
   const { data, error } = await supabase
-    .from('people')
-    .insert([{ name: normalizedName }])
+    .from("people")
+    .insert([{ name }])
     .select()
     .single();
 
-  if (error) {
-    throw new Error(`Erro ao criar pessoa: ${error.message}`);
-  }
+  if (error) throw error;
 
   return data;
 }
 
-export async function findOrCreatePerson(name) {
-  const existingPerson = await findPersonByName(name);
-
-  if (existingPerson) {
-    return existingPerson;
-  }
-
-  return createPerson(name);
-}
+module.exports = { getOrCreatePerson };

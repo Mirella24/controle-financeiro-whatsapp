@@ -1,5 +1,5 @@
 import { findOrCreatePerson } from '../services/people.service.js';
-import { createEntry, listEntriesByPerson } from '../services/entries.service.js';
+const { createEntry } = require('../services/entries.service');
 
 export async function createTestEntry(req, res) {
   try {

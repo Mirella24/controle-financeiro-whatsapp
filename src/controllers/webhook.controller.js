@@ -1,164 +1,84 @@
-import { parseIncomingMessage } from '../services/message-parser.service.js';
-import { findOrCreatePerson } from '../services/people.service.js';
-import { createEntry, listEntriesByPerson } from '../services/entries.service.js';
-import { sendTextMessage, sendDocumentMessage } from '../services/evolution.service.js';
-import { generatePersonReportPdf } from '../services/pdf.service.js';
-import { formatCurrency } from '../utils/formatCurrency.js';
-import { formatDateBR } from '../utils/formatDate.js';
+const crypto = require("crypto");
+const { parseMessage } = require("../utils/parser");
+const { createEntry } = require("../services/entries.service");
+const { sendMessage } = require("../services/evolution.service");
 
-const RESPONSE_NUMBER = '5518991391889';
+const processedMessages = new Set();
 
-function extractMessageData(body) {
-  const event = body?.event || '';
-  const data = body?.data || {};
+async function webhook(req, res) {
+  const requestId = crypto.randomUUID();
 
-  const text =
-    data?.message?.conversation ||
-    data?.message?.extendedTextMessage?.text ||
-    data?.message?.imageMessage?.caption ||
-    data?.message?.videoMessage?.caption ||
-    data?.body ||
-    '';
-
-  const remoteJid =
-    data?.key?.remoteJid ||
-    data?.remoteJid ||
-    data?.jid ||
-    '';
-
-  const remoteJidAlt =
-    data?.key?.remoteJidAlt ||
-    data?.remoteJidAlt ||
-    data?.sender ||
-    data?.senderPn ||
-    data?.participantAlt ||
-    '';
-
-  const fromMe = data?.key?.fromMe || data?.fromMe || false;
-
-  return {
-    event,
-    text,
-    remoteJid,
-    remoteJidAlt,
-    fromMe
-  };
-}
-
-function normalizeEventName(event = '') {
-  return String(event).trim().toLowerCase();
-}
-
-export async function evolutionWebhook(req, res) {
   try {
-    const { event, text, remoteJid, remoteJidAlt, fromMe } = extractMessageData(req.body);
-    const normalizedEvent = normalizeEventName(event);
+    console.log(`\n🟢 [${requestId}] NOVA REQUISIÇÃO webhook.controller.js`);
+    console.log(`[${requestId}] BODY:`, JSON.stringify(req.body, null, 2));
 
-    console.log('======================================');
-    console.log('Nova mensagem recebida no webhook');
-    console.log('event:', event);
-    console.log('remoteJid:', remoteJid);
-    console.log('remoteJidAlt:', remoteJidAlt);
-    console.log('fromMe:', fromMe);
-    console.log('text:', text);
+    const message = req.body?.data;
 
-    if (normalizedEvent && normalizedEvent !== 'messages.upsert') {
-      return res.status(200).json({
-        ok: true,
-        message: `Evento ignorado: ${event}`
-      });
+    if (!message) {
+      console.log(`[${requestId}] ❌ Mensagem não encontrada`);
+      return res.sendStatus(200);
     }
 
-    if (!text || !remoteJid) {
-      return res.status(200).json({
-        ok: true,
-        message: 'Webhook recebido sem mensagem útil'
-      });
+    const messageId = message.key?.id;
+
+    if (processedMessages.has(messageId)) {
+      console.log(`[${requestId}] ⚠️ Mensagem duplicada ignorada`);
+      return res.sendStatus(200);
     }
 
-    if (remoteJid.includes('@g.us')) {
-      return res.status(200).json({
-        ok: true,
-        message: 'Mensagem de grupo ignorada'
-      });
+    processedMessages.add(messageId);
+
+    const from = message.key?.remoteJid;
+    const fromMe = message.key?.fromMe;
+
+    const text =
+      message.message?.conversation ||
+      message.message?.extendedTextMessage?.text ||
+      "";
+
+    console.log(`[${requestId}] 📩 TEXTO:`, text);
+    console.log(`[${requestId}] 📌 FROM:`, from);
+    console.log(`[${requestId}] 📌 fromMe:`, fromMe);
+
+    // 🚫 ignora mensagens do próprio bot
+    if (!fromMe) {
+      console.log(`[${requestId}] 🚫 Ignorado (fromMe)`);
+      return res.sendStatus(200);
     }
 
-    const parsed = parseIncomingMessage(text);
-    console.log('parsed:', parsed);
-
-    if (parsed.type === 'invalid') {
-      return res.status(200).json({
-        ok: true,
-        message: 'Mensagem ignorada por não estar no formato do sistema'
-      });
+    // 🚫 ignora grupos
+    if (from?.includes("@g.us")) {
+      console.log(`[${requestId}] 🚫 Ignorado (grupo)`);
+      return res.sendStatus(200);
     }
 
-    if (parsed.type === 'report') {
-      const person = await findOrCreatePerson(parsed.name);
-      const entries = await listEntriesByPerson(person.id);
+    // 🔍 parse
+    const parsed = parseMessage(text);
 
-      const { fileName, filePath } = await generatePersonReportPdf({
-        person,
-        entries
-      });
+    console.log(`[${requestId}] 🔍 PARSED:`, parsed);
 
-      await sendTextMessage({
-        number: RESPONSE_NUMBER,
-        text: `Relatório de ${person.name} gerado com sucesso. Enviando PDF...`
-      });
+    if (parsed.error) {
+      console.log(`[${requestId}] ❌ ERRO PARSER:`, parsed.error);
 
-      await sendDocumentMessage({
-        number: RESPONSE_NUMBER,
-        filePath,
-        fileName,
-        caption: `Relatório financeiro de ${person.name}`
-      });
-
-      return res.status(200).json({
-        ok: true,
-        message: 'Relatório gerado e enviado com sucesso'
-      });
+      await sendMessage(from, `❌ ${parsed.error}`);
+      return res.sendStatus(200);
     }
 
-    if (parsed.type === 'entry') {
-      const person = await findOrCreatePerson(parsed.name);
+    console.log(`[${requestId}] 💾 Enviando para o banco...`);
 
-      await createEntry({
-        personId: person.id,
-        description: parsed.description,
-        amount: parsed.amount,
-        entryDate: parsed.entryDate
-      });
+    const result = await createEntry(parsed);
 
-      const replyText = `Lançamento salvo com sucesso.
+    console.log(`[${requestId}] ✅ SALVO:`, result);
 
-Responsável: ${person.name}
-Descrição: ${parsed.description}
-Valor: ${formatCurrency(parsed.amount)}
-Data: ${formatDateBR(parsed.entryDate)}`;
+    await sendMessage(from, "✅ Lançamento salvo com sucesso!");
 
-      await sendTextMessage({
-        number: RESPONSE_NUMBER,
-        text: replyText
-      });
+    res.sendStatus(200);
 
-      return res.status(200).json({
-        ok: true,
-        message: 'Lançamento processado com sucesso'
-      });
-    }
-
-    return res.status(200).json({
-      ok: true,
-      message: 'Nenhuma ação executada'
-    });
   } catch (error) {
-    console.error('Erro no webhook Evolution:');
-    console.error(error?.response?.data || error.message);
-
-    return res.status(500).json({
-      ok: false,
-      message: error.message
-    });
+    console.log(`[${requestId}] 💥 ERRO GERAL:`, error.message);
+    console.error(error);
+    res.sendStatus(500);
   }
 }
+
+module.exports = { webhook };
