@@ -8,6 +8,8 @@ const { formatCurrency } = require("../utils/formatCurrency");
 
 const processedMessages = new Set();
 
+const lastListedEntriesByChat = new Map();
+
 async function webhook(req, res) {
   const requestId = crypto.randomUUID();
 
@@ -56,22 +58,17 @@ async function webhook(req, res) {
     }
 
     // =========================
-    // 📄 COMANDO PDF
+    // 📋 COMANDO LISTAR
     // =========================
-    if (text.toLowerCase().startsWith("pdf")) {
-      console.log(`[${requestId}] 📄 Comando PDF detectado`);
-
+    if (text.toLowerCase().startsWith("listar")) {
       const partes = text.trim().split(" ");
-      const nome = partes[1]; // pdf mirella
+      const nome = partes[1];
 
       if (!nome) {
-        await sendMessage(from, "❌ Informe o nome. Ex: pdf mirella");
+        await sendMessage(from, "❌ Informe o nome. Ex: listar Nome");
         return res.sendStatus(200);
       }
 
-      console.log(`[${requestId}] 🔍 Buscando pessoa:`, nome);
-
-      // buscar pessoa
       const { data: personData, error: personError } = await supabase
         .from("people")
         .select("*")
@@ -80,37 +77,128 @@ async function webhook(req, res) {
         .single();
 
       if (personError || !personData) {
-        console.log(`[${requestId}] ❌ Pessoa não encontrada`);
         await sendMessage(from, "❌ Pessoa não encontrada");
         return res.sendStatus(200);
       }
 
-      console.log(`[${requestId}] 👤 Pessoa encontrada:`, personData);
+      const { data: entries, error } = await supabase
+        .from("entries")
+        .select("*")
+        .eq("person_id", personData.id)
+        .order("created_at", { ascending: true });
 
-      // buscar entries da pessoa
+      if (error || !entries.length) {
+        await sendMessage(from, "❌ Nenhum registro encontrado");
+        return res.sendStatus(200);
+      }
+
+      // 🔥 salva lista para deletar depois
+      lastListedEntriesByChat.set(from, entries);
+
+      const responsavel = entries[0].name;
+
+      let total = 0;
+
+      const lista = entries.map((item, index) => {
+        const valor = item.value ?? item.amount ?? 0;
+        total += valor;
+        return `${index + 1} - ${item.description}: ${valor}`;
+      });
+
+      const mensagem = `
+📊 *${responsavel}*
+
+${lista.join("\n")}
+
+💰 *Total:* ${total}
+`.trim();
+
+      await sendMessage(from, mensagem);
+
+      return res.sendStatus(200);
+    }
+
+    // =========================
+    // 🗑️ COMANDO DELETAR
+    // =========================
+    if (text.toLowerCase().startsWith("deletar")) {
+      const partes = text.trim().split(" ");
+      const indice = Number(partes[1]);
+
+      if (!indice || indice < 1) {
+        await sendMessage(from, "❌ Informe um índice válido. Ex: deletar 1");
+        return res.sendStatus(200);
+      }
+
+      const listaSalva = lastListedEntriesByChat.get(from);
+
+      if (!listaSalva || listaSalva.length === 0) {
+        await sendMessage(from, "❌ Use 'listar' antes de deletar.");
+        return res.sendStatus(200);
+      }
+
+      const item = listaSalva[indice - 1];
+
+      if (!item) {
+        await sendMessage(from, `❌ Índice ${indice} não encontrado.`);
+        return res.sendStatus(200);
+      }
+
+      const { error } = await supabase
+        .from("entries")
+        .delete()
+        .eq("id", item.id);
+
+      if (error) {
+        console.log(`[${requestId}] ❌ ERRO AO DELETAR:`, error);
+        await sendMessage(from, "❌ Erro ao deletar item");
+        return res.sendStatus(200);
+      }
+
+      await sendMessage(from, `✅ Item ${indice} deletado com sucesso.`);
+
+      return res.sendStatus(200);
+    }
+
+    // =========================
+    // 📄 COMANDO PDF
+    // =========================
+    if (text.toLowerCase().startsWith("pdf")) {
+      const partes = text.trim().split(" ");
+      const nome = partes[1];
+
+      if (!nome) {
+        await sendMessage(from, "❌ Informe o nome. Ex: pdf Nome");
+        return res.sendStatus(200);
+      }
+
+      const { data: personData, error: personError } = await supabase
+        .from("people")
+        .select("*")
+        .ilike("name", `%${nome}%`)
+        .limit(1)
+        .single();
+
+      if (personError || !personData) {
+        await sendMessage(from, "❌ Pessoa não encontrada");
+        return res.sendStatus(200);
+      }
+
       const { data: entries, error } = await supabase
         .from("entries")
         .select("*")
         .eq("person_id", personData.id);
 
       if (error) {
-        console.log(`[${requestId}] ❌ ERRO AO BUSCAR ENTRIES:`, error);
         await sendMessage(from, "❌ Erro ao gerar PDF");
         return res.sendStatus(200);
       }
-
-      console.log(`[${requestId}] 📊 ENTRIES ENCONTRADOS:`, entries.length);
-
-      console.log(`[${requestId}] 🛠️ Gerando PDF...`);
 
       const pdf = await generatePersonReportPdf({
         person: personData,
         entries
       });
 
-      console.log(`[${requestId}] ✅ PDF GERADO:`, pdf.filePath);
-
-      // 🔥 enviar PDF
       await sendMedia(from, pdf.filePath);
 
       return res.sendStatus(200);
@@ -121,27 +209,22 @@ async function webhook(req, res) {
     // =========================
     const parsed = parseMessage(text);
 
-    console.log(`[${requestId}] 🔍 PARSED:`, parsed);
-
     if (parsed.error) {
-      console.log(`[${requestId}] ❌ ERRO PARSER:`, parsed.error);
       await sendMessage(from, `❌ ${parsed.error}`);
       return res.sendStatus(200);
     }
 
-    console.log(`[${requestId}] 💾 Enviando para o banco...`);
-
     const result = await createEntry(parsed);
 
-    console.log(`[${requestId}] ✅ SALVO:`, result);
-
-    await sendMessage(from, 
+    await sendMessage(
+      from,
       `
-      ✅ Registrado.
-      📁 ${result[0].name}.
-      ✍🏻 ${result[0].description}.
-      💰 ${formatCurrency(result[0].amount)}
-      `);
+✅ Registrado
+📁 ${result[0].name}
+✍🏻 ${result[0].description}
+💰 ${formatCurrency(result[0].amount)}
+`.trim()
+    );
 
     res.sendStatus(200);
 
