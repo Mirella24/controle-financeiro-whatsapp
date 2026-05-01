@@ -1,13 +1,6 @@
 const { supabase } = require("../config/supabase");
 const { getOrCreatePerson } = require("./people.service");
-
-function formatarDataUTC(dataStr) {
-  const [dia, mes, ano] = dataStr.split('/');
-
-  const data = new Date(Date.UTC(ano, mes - 1, dia));
-
-  return data.toISOString();
-}
+const { formatarDataUTC} =  require('../utils/normalizeDate.js')
 
 async function createEntry(data) {
   console.log("📦 SERVICE RECEBEU:", data);
@@ -29,7 +22,7 @@ async function createEntry(data) {
     name: data.name,
     description: data.description,
     amount: data.amount,
-    date: formatarDataUTC(data.date) || '2024-01-01T00:00:00Z',
+    date: formatarDataUTC(data.date),
     person_id: person.id,
     entry_date: new Date().toISOString()
   };
@@ -45,7 +38,6 @@ async function createEntry(data) {
       person_id: entryData.person_id,
       date: entryData.date,
       entry_date: entryData.entry_date,
-      message_id: 'Teste msg id',
       amount: entryData.amount, 
     })
     .select();
