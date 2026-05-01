@@ -12,7 +12,7 @@ async function sendMessage(to, message) {
     await axios.post(
       `${process.env.EVOLUTION_API_URL}/message/sendText/${process.env.EVOLUTION_INSTANCE}`,
       {
-        number: "5518991391889",
+        number: process.env.PHONE_NUMBER,
         textMessage: {
           text: message
         }
@@ -55,7 +55,7 @@ async function sendMedia(to, filePath) {
     await axios.post(
       `${process.env.EVOLUTION_API_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`,
       {
-        number: "5518991391889",
+        number: process.env.PHONE_NUMBER,
         mediaMessage: {
           mediatype: "document",
           media: base64,
