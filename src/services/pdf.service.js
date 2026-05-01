@@ -28,46 +28,70 @@ function ensurePdfDirectory() {
   return pdfDir;
 }
 
-function drawFooter(doc) {
-  const footerY = doc.page.height - 35;
+// function drawFooter(doc) {
+//   const footerY = doc.page.height - 35;
 
-  doc
-    .font('Helvetica')
-    .fontSize(9)
-    .text('Relatório gerado automaticamente pelo sistema', 50, footerY, {
-      width: 495,
-      align: 'center'
-    });
-}
+//   doc
+//     .font('Helvetica')
+//     .fontSize(9)
+//     .text('Relatório gerado automaticamente pelo sistema', 50, footerY, {
+//       width: 495,
+//       align: 'center'
+//     });
+// }
 
 function drawHeader(doc, personName, totalEntries, totalValue) {
+  const logoPath = path.resolve(__dirname, '../assets/logo.png');
+
+    // largura útil da página
+  const pageWidth = doc.page.width;
+
+  let currentY = 50;
+
+  // 🔥 LOGO
+  if (fs.existsSync(logoPath)) {
+    doc.image(logoPath, 0, 0, {
+      width: doc.page.width
+    });
+    currentY += 80;
+  }
+   // 🔥 TÍTULO
   doc
     .font('Helvetica-Bold')
     .fontSize(20)
-    .text('Relatório Financeiro', 50, 40, {
-      width: 495,
+    .text('Relatório Financeiro', 0, currentY, {
+      width: pageWidth,
       align: 'center'
     });
 
+  currentY += 30;
+
+  // 🔥 INFORMAÇÕES
   doc
     .font('Helvetica')
     .fontSize(11)
-    .text(`Responsável: ${personName}`, 50, 85)
-    .text(`Emitido em: ${formatDateBR(new Date().toISOString().slice(0, 10))}`, 50, 102)
-    .text(`Quantidade de lançamentos: ${totalEntries}`, 50, 119)
-    .text(`Valor total: ${formatCurrency(totalValue)}`, 50, 136);
+    .text(`Responsável: ${personName}`, 50, currentY)
+    .text(`Emitido em: ${formatDateBR(new Date().toISOString().slice(0, 10))}`, 50, currentY + 15)
+    .text(`Quantidade de lançamentos: ${totalEntries}`, 50, currentY + 30)
+    .text(`Valor total: ${formatCurrency(totalValue)}`, 50, currentY + 45);
 
+  currentY += 70;
+
+  // 🔥 LINHA
   doc
-    .moveTo(50, 160)
-    .lineTo(545, 160)
+    .moveTo(50, currentY)
+    .lineTo(545, currentY)
     .stroke();
 
+  currentY += 15;
+
+  // 🔥 TÍTULO DA TABELA
   doc
     .font('Helvetica-Bold')
     .fontSize(13)
-    .text('Lançamentos', 50, 175);
+    .text('Lançamentos', 50, currentY);
 
-  return 200;
+  return currentY + 25;
 }
 
 function drawTableHeader(doc, y, columns) {
@@ -88,7 +112,7 @@ function drawTableHeader(doc, y, columns) {
 
   doc
     .font('Helvetica-Bold')
-    .fontSize(10)
+    .fontSize(13)
     .text('Data', x + 8, y + 8, { width: dateW - 16 })
     .text('Descrição', x + dateW + 8, y + 8, { width: descW - 16 })
     .text('Valor', x + dateW + descW + 8, y + 8, {
@@ -170,7 +194,7 @@ function drawRows(doc, entries, startY, personName, totalEntries, totalValue, co
     const rowHeight = getRowHeight(doc, entry.description, columns);
 
     if (y + rowHeight > bottomLimit) {
-      drawFooter(doc);
+      // drawFooter(doc);
       y = createNewPage(doc, personName, totalEntries, totalValue, columns);
     }
 
@@ -187,7 +211,7 @@ function drawTotal(doc, y, totalValue) {
   const x = 365;
 
   if (y + boxHeight + 20 > doc.page.height - 60) {
-    drawFooter(doc);
+    //drawFooter(doc);
     doc.addPage();
     y = 60;
   }
@@ -234,7 +258,7 @@ export async function generatePersonReportPdf({ person, entries }) {
     currentY = drawTableHeader(doc, currentY, columns);
     currentY = drawRows(doc, entries, currentY, person.name, totalEntries, totalValue, columns);
     drawTotal(doc, currentY, totalValue);
-    drawFooter(doc);
+    //drawFooter(doc);
 
     doc.end();
 

@@ -46,7 +46,7 @@ async function createEntry(data) {
       date: entryData.date,
       entry_date: entryData.entry_date,
       message_id: 'Teste msg id',
-      amount: 10, 
+      amount: entryData.amount, 
     })
     .select();
 
