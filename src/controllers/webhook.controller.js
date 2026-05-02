@@ -5,6 +5,7 @@ const { sendMessage, sendMedia } = require("../services/evolution.service");
 const { generatePersonReportPdf } = require("../services/pdf.service");
 const { supabase } = require("../config/supabase");
 const { formatCurrency } = require("../utils/formatCurrency");
+const { LIST_COMMANDS, DELETE_COMMANDS } = require("../utils/comandsList");
 
 const processedMessages = new Set();
 
@@ -70,7 +71,7 @@ async function webhook(req, res) {
     // =========================
     // 📋 COMANDO LISTAR
     // =========================
-    if (text.toLowerCase().startsWith("listar")) {
+    if (LIST_COMMANDS.some(cmd => text.toLowerCase().startsWith(cmd))) {
       const partes = text.trim().split(" ");
       const nome = partes[1];
 
@@ -131,7 +132,7 @@ ${lista.join("\n")}
     // =========================
     // 🗑️ COMANDO DELETAR
     // =========================
-    if (text.toLowerCase().startsWith("deletar")) {
+    if (DELETE_COMMANDS.some(cmd => text.toLowerCase().startsWith(cmd))) {
       const partes = text.trim().split(" ");
       const indice = Number(partes[1]);
 
@@ -165,7 +166,14 @@ ${lista.join("\n")}
         return res.sendStatus(200);
       }
 
-      await sendMessage(from, `✅ Item ${indice} deletado com sucesso.`);
+      await sendMessage(from, 
+        `❌ Item removido com sucesso
+━━━━━━━━━━━━━━━
+📁 ${item.name}
+✍🏻 ${item.description}
+💰 ${formatCurrency(item.amount)}
+━━━━━━━━━━━━━━━
+        `.trim());
 
       return res.sendStatus(200);
     }
@@ -173,7 +181,7 @@ ${lista.join("\n")}
     // =========================
     // 📄 COMANDO PDF
     // =========================
-    if (text.toLowerCase().startsWith("pdf")) {
+    if (PDF_COMMANDS.some(cmd => text.toLowerCase().startsWith(cmd))) {
       const partes = text.trim().split(" ");
       const nome = partes[1];
 
@@ -181,7 +189,6 @@ ${lista.join("\n")}
         await sendMessage(from, "❌ Informe o nome. Ex: pdf Nome");
         return res.sendStatus(200);
       }
-
       const { data: personData, error: personError } = await supabase
         .from("people")
         .select("*")
