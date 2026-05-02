@@ -45,15 +45,25 @@ async function webhook(req, res) {
     console.log(`[${requestId}] 📌 FROM:`, from);
     console.log(`[${requestId}] 📌 fromMe:`, fromMe);
 
-    // 🚫 ignora mensagens do próprio bot
+    // 🚫 ignora mensagens recebidas de outros
     if (!fromMe) {
-      console.log(`[${requestId}] 🚫 Ignorado (fromMe)`);
+      console.log(`[${requestId}] 🚫 Ignorado (não é fromMe)`);
       return res.sendStatus(200);
     }
 
     // 🚫 ignora grupos
     if (from?.includes("@g.us")) {
       console.log(`[${requestId}] 🚫 Ignorado (grupo)`);
+      return res.sendStatus(200);
+    }
+
+    // 🚫 ignora mensagens enviadas para outros contatos (processa apenas mensagens para si mesmo)
+    const myNumber = (process.env.PHONE_NUMBER || "").trim();
+    const myLid = (process.env.MY_LID || "").trim();
+    const fromNumber = from?.split("@")[0];
+    const isSelfChat = fromNumber === myNumber || (myLid && fromNumber === myLid);
+    if (!isSelfChat) {
+      console.log(`[${requestId}] 🚫 Ignorado (mensagem para outro contato: ${fromNumber})`);
       return res.sendStatus(200);
     }
 
