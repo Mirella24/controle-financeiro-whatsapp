@@ -15,20 +15,20 @@ async function webhook(req, res) {
   const requestId = crypto.randomUUID();
 
   try {
-    console.log(`\n🟢 [${requestId}] NOVA REQUISIÇÃO webhook.controller.js`);
-    console.log(`[${requestId}] BODY:`, JSON.stringify(req.body, null, 2));
+    // console.log(`\n🟢 [${requestId}] NOVA REQUISIÇÃO webhook.controller.js`);
+    // console.log(`[${requestId}] BODY:`, JSON.stringify(req.body, null, 2));
 
     const message = req.body?.data;
 
     if (!message) {
-      console.log(`[${requestId}] ❌ Mensagem não encontrada`);
+      // console.log(`[${requestId}] ❌ Mensagem não encontrada`);
       return res.sendStatus(200);
     }
 
     const messageId = message.key?.id;
 
     if (processedMessages.has(messageId)) {
-      console.log(`[${requestId}] ⚠️ Mensagem duplicada ignorada`);
+      // console.log(`[${requestId}] ⚠️ Mensagem duplicada ignorada`);
       return res.sendStatus(200);
     }
 
@@ -42,19 +42,19 @@ async function webhook(req, res) {
       message.message?.extendedTextMessage?.text ||
       "";
 
-    console.log(`[${requestId}] 📩 TEXTO:`, text);
-    console.log(`[${requestId}] 📌 FROM:`, from);
-    console.log(`[${requestId}] 📌 fromMe:`, fromMe);
+    // console.log(`[${requestId}] 📩 TEXTO:`, text);
+    // console.log(`[${requestId}] 📌 FROM:`, from);
+    // console.log(`[${requestId}] 📌 fromMe:`, fromMe);
 
     // 🚫 ignora mensagens recebidas de outros
     if (!fromMe) {
-      console.log(`[${requestId}] 🚫 Ignorado (não é fromMe)`);
+      // console.log(`[${requestId}] 🚫 Ignorado (não é fromMe)`);
       return res.sendStatus(200);
     }
 
     // 🚫 ignora grupos
     if (from?.includes("@g.us")) {
-      console.log(`[${requestId}] 🚫 Ignorado (grupo)`);
+      // console.log(`[${requestId}] 🚫 Ignorado (grupo)`);
       return res.sendStatus(200);
     }
 
@@ -64,7 +64,7 @@ async function webhook(req, res) {
     const fromNumber = from?.split("@")[0];
     const isSelfChat = fromNumber === myNumber || (myLid && fromNumber === myLid);
     if (!isSelfChat) {
-      console.log(`[${requestId}] 🚫 Ignorado (mensagem para outro contato: ${fromNumber})`);
+      // console.log(`[${requestId}] 🚫 Ignorado (mensagem para outro contato: ${fromNumber})`);
       return res.sendStatus(200);
     }
 
@@ -161,7 +161,7 @@ ${lista.join("\n")}
         .eq("id", item.id);
 
       if (error) {
-        console.log(`[${requestId}] ❌ ERRO AO DELETAR:`, error);
+        // console.log(`[${requestId}] ❌ ERRO AO DELETAR:`, error);
         await sendMessage(from, "❌ Erro ao deletar item");
         return res.sendStatus(200);
       }
@@ -246,7 +246,7 @@ ${lista.join("\n")}
     res.sendStatus(200);
 
   } catch (error) {
-    console.log(`[${requestId}] 💥 ERRO GERAL:`, error.message);
+    // console.log(`[${requestId}] 💥 ERRO GERAL:`, error.message);
     console.error(error);
     res.sendStatus(500);
   }

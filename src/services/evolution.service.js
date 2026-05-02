@@ -25,14 +25,14 @@ async function sendMessage(to, message) {
       }
     );
 
-    console.log("📤 Mensagem enviada");
+    // console.log("📤 Mensagem enviada");
   } catch (error) {
-    console.log("❌ ERRO AO ENVIAR MENSAGEM:");
+    // console.log("❌ ERRO AO ENVIAR MENSAGEM:");
 
     if (error.response) {
-      console.log("API ERROR:", JSON.stringify(error.response.data, null, 2));
+      // console.log("API ERROR:", JSON.stringify(error.response.data, null, 2));
     } else {
-      console.log("NODE ERROR:", error.message);
+      // console.log("NODE ERROR:", error.message);
     }
   }
 }
@@ -44,13 +44,13 @@ async function sendMedia(to, filePath) {
   try {
     const number = to.split("@")[0];
 
-    console.log("📂 Lendo arquivo:", filePath);
+    // console.log("📂 Lendo arquivo:", filePath);
 
     // 🔥 converter PDF para base64
     const fileBuffer = fs.readFileSync(filePath);
     const base64 = fileBuffer.toString("base64");
 
-    console.log("📦 Base64 gerado com sucesso");
+    // console.log("📦 Base64 gerado com sucesso");
 
     await axios.post(
       `${process.env.EVOLUTION_API_URL}/message/sendMedia/${process.env.EVOLUTION_INSTANCE}`,
@@ -71,14 +71,14 @@ async function sendMedia(to, filePath) {
       }
     );
 
-    console.log("📤 PDF enviado com sucesso");
+    // console.log("📤 PDF enviado com sucesso");
   } catch (error) {
-    console.log("❌ ERRO AO ENVIAR PDF:");
+    // console.log("❌ ERRO AO ENVIAR PDF:");
 
     if (error.response) {
-      console.log("API ERROR:", JSON.stringify(error.response.data, null, 2));
+      // console.log("API ERROR:", JSON.stringify(error.response.data, null, 2));
     } else {
-      console.log("NODE ERROR:", error.message);
+      // console.log("NODE ERROR:", error.message);
     }
   }
 }

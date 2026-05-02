@@ -3,7 +3,7 @@ const { getOrCreatePerson } = require("./people.service");
 const { formatarDataUTC} =  require('../utils/normalizeDate.js')
 
 async function createEntry(data) {
-  console.log("📦 SERVICE RECEBEU:", data);
+  // console.log("📦 SERVICE RECEBEU:", data);
 
   if (!data.amount || isNaN(data.amount)) {
     throw new Error("Valor inválido no service");
@@ -15,8 +15,8 @@ async function createEntry(data) {
 
   const person = await getOrCreatePerson(data.name);
 
-  console.log("👤 DATA:", data);
-  console.log("👤 Pessoa:", person);
+  // console.log("👤 DATA:", data);
+  // console.log("👤 Pessoa:", person);
 
   const entryData = {
     name: data.name,
@@ -27,7 +27,7 @@ async function createEntry(data) {
     entry_date: new Date().toISOString()
   };
 
-  console.log("📤 Enviando para Supabase:", entryData);
+  // console.log("📤 Enviando para Supabase:", entryData);
 
   const { data: result, error } = await supabase
     .from("entries")
@@ -43,11 +43,11 @@ async function createEntry(data) {
     .select();
 
   if (error) {
-    console.log("❌ ERRO SUPABASE:", error);
+    // console.log("❌ ERRO SUPABASE:", error);
     throw error;
   }
 
-  console.log("✅ SALVO NO BANCO:", result);
+  // console.log("✅ SALVO NO BANCO:", result);
 
   return result;
 }
