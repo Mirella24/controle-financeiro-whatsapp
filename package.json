@@ -3,6 +3,7 @@
   "version": "1.0.1",
   "description": "Sistema de controle financeiro via WhatsApp com Evolution API + Supabase",
   "main": "src/server.js",
+  "type": "module",
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"

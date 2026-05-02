@@ -1,6 +1,6 @@
-const { supabase } = require("../config/supabase");
-const { getOrCreatePerson } = require("./people.service");
-const { formatarDataUTC} =  require('../utils/normalizeDate.js')
+import { supabase } from '../config/supabase.js';
+import { getOrCreatePerson } from './people.service.js';
+import { formatarDataUTC } from '../utils/normalizeDate.js';
 
 async function createEntry(data) {
   // console.log("📦 SERVICE RECEBEU:", data);
@@ -52,4 +52,4 @@ async function createEntry(data) {
   return result;
 }
 
-module.exports = { createEntry };
+export { createEntry };

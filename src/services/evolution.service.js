@@ -1,5 +1,5 @@
-const axios = require("axios");
-const fs = require("fs");
+import axios from 'axios';
+import fs from 'fs';
 
 
 // =========================
@@ -83,4 +83,4 @@ async function sendMedia(to, filePath) {
   }
 }
 
-module.exports = { sendMessage, sendMedia };
+export { sendMessage, sendMedia };

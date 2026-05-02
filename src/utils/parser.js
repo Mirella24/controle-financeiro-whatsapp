@@ -37,4 +37,4 @@ function parseMessage(text) {
   };
 }
 
-module.exports = { parseMessage };
+export { parseMessage };

@@ -1,7 +1,6 @@
-require("dotenv").config();
-
-const express = require("express");
-const { webhook } = require("./controllers/webhook.controller");
+import 'dotenv/config';
+import express from 'express';
+import { webhook } from './controllers/webhook.controller.js';
 
 const app = express();
 
@@ -16,5 +15,5 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-   console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

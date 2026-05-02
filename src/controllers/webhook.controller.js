@@ -1,18 +1,18 @@
-const crypto = require("crypto");
-const { parseMessage } = require("../utils/parser");
-const { createEntry } = require("../services/entries.service");
-const { sendMessage, sendMedia } = require("../services/evolution.service");
-const { generatePersonReportPdf } = require("../services/pdf.service");
-const { supabase } = require("../config/supabase");
-const { formatCurrency } = require("../utils/formatCurrency");
-const { LIST_COMMANDS, DELETE_COMMANDS } = require("../utils/comandsList");
+import { randomUUID } from 'crypto';
+import { parseMessage } from '../utils/parser.js';
+import { createEntry } from '../services/entries.service.js';
+import { sendMessage, sendMedia } from '../services/evolution.service.js';
+import { generatePersonReportPdf } from '../services/pdf.service.js';
+import { supabase } from '../config/supabase.js';
+import { formatCurrency } from '../utils/formatCurrency.js';
+import { LIST_COMMANDS, DELETE_COMMANDS, PDF_COMMANDS } from '../utils/comandsList.js';
 
 const processedMessages = new Set();
 
 const lastListedEntriesByChat = new Map();
 
 async function webhook(req, res) {
-  const requestId = crypto.randomUUID();
+  const requestId = randomUUID();
 
   try {
     // console.log(`\n🟢 [${requestId}] NOVA REQUISIÇÃO webhook.controller.js`);
@@ -252,4 +252,4 @@ ${lista.join("\n")}
   }
 }
 
-module.exports = { webhook };
+export { webhook };

@@ -1,4 +1,4 @@
-const { supabase } = require("../config/supabase");
+import { supabase } from '../config/supabase.js';
 
 async function getOrCreatePerson(name) {
   const { data: existing } = await supabase
@@ -20,4 +20,4 @@ async function getOrCreatePerson(name) {
   return data;
 }
 
-module.exports = { getOrCreatePerson };
+export { getOrCreatePerson };
