@@ -1,33 +1,34 @@
-const crypto = require("crypto");
-const { parseMessage } = require("../utils/parser");
-const { createEntry } = require("../services/entries.service");
-const { sendMessage, sendMedia } = require("../services/evolution.service");
-const { generatePersonReportPdf } = require("../services/pdf.service");
-const { supabase } = require("../config/supabase");
-const { formatCurrency } = require("../utils/formatCurrency");
+import { randomUUID } from 'crypto';
+import { parseMessage } from '../utils/parser.js';
+import { createEntry } from '../services/entries.service.js';
+import { sendMessage, sendMedia } from '../services/evolution.service.js';
+import { generatePersonReportPdf } from '../services/pdf.service.js';
+import { supabase } from '../config/supabase.js';
+import { formatCurrency } from '../utils/formatCurrency.js';
+import { LIST_COMMANDS, DELETE_COMMANDS, PDF_COMMANDS } from '../utils/comandsList.js';
 
 const processedMessages = new Set();
 
 const lastListedEntriesByChat = new Map();
 
 async function webhook(req, res) {
-  const requestId = crypto.randomUUID();
+  const requestId = randomUUID();
 
   try {
-    console.log(`\n🟢 [${requestId}] NOVA REQUISIÇÃO webhook.controller.js`);
-    console.log(`[${requestId}] BODY:`, JSON.stringify(req.body, null, 2));
+    // console.log(`\n🟢 [${requestId}] NOVA REQUISIÇÃO webhook.controller.js`);
+    // console.log(`[${requestId}] BODY:`, JSON.stringify(req.body, null, 2));
 
     const message = req.body?.data;
 
     if (!message) {
-      console.log(`[${requestId}] ❌ Mensagem não encontrada`);
+      // console.log(`[${requestId}] ❌ Mensagem não encontrada`);
       return res.sendStatus(200);
     }
 
     const messageId = message.key?.id;
 
     if (processedMessages.has(messageId)) {
-      console.log(`[${requestId}] ⚠️ Mensagem duplicada ignorada`);
+      // console.log(`[${requestId}] ⚠️ Mensagem duplicada ignorada`);
       return res.sendStatus(200);
     }
 
@@ -41,26 +42,36 @@ async function webhook(req, res) {
       message.message?.extendedTextMessage?.text ||
       "";
 
-    console.log(`[${requestId}] 📩 TEXTO:`, text);
-    console.log(`[${requestId}] 📌 FROM:`, from);
-    console.log(`[${requestId}] 📌 fromMe:`, fromMe);
+    // console.log(`[${requestId}] 📩 TEXTO:`, text);
+    // console.log(`[${requestId}] 📌 FROM:`, from);
+    // console.log(`[${requestId}] 📌 fromMe:`, fromMe);
 
-    // 🚫 ignora mensagens do próprio bot
+    // 🚫 ignora mensagens recebidas de outros
     if (!fromMe) {
-      console.log(`[${requestId}] 🚫 Ignorado (fromMe)`);
+      // console.log(`[${requestId}] 🚫 Ignorado (não é fromMe)`);
       return res.sendStatus(200);
     }
 
     // 🚫 ignora grupos
     if (from?.includes("@g.us")) {
-      console.log(`[${requestId}] 🚫 Ignorado (grupo)`);
+      // console.log(`[${requestId}] 🚫 Ignorado (grupo)`);
+      return res.sendStatus(200);
+    }
+
+    // 🚫 ignora mensagens enviadas para outros contatos (processa apenas mensagens para si mesmo)
+    const myNumber = (process.env.PHONE_NUMBER || "").trim();
+    const myLid = (process.env.MY_LID || "").trim();
+    const fromNumber = from?.split("@")[0];
+    const isSelfChat = fromNumber === myNumber || (myLid && fromNumber === myLid);
+    if (!isSelfChat) {
+      // console.log(`[${requestId}] 🚫 Ignorado (mensagem para outro contato: ${fromNumber})`);
       return res.sendStatus(200);
     }
 
     // =========================
     // 📋 COMANDO LISTAR
     // =========================
-    if (text.toLowerCase().startsWith("listar")) {
+    if (LIST_COMMANDS.some(cmd => text.toLowerCase().startsWith(cmd))) {
       const partes = text.trim().split(" ");
       const nome = partes[1];
 
@@ -121,7 +132,7 @@ ${lista.join("\n")}
     // =========================
     // 🗑️ COMANDO DELETAR
     // =========================
-    if (text.toLowerCase().startsWith("deletar")) {
+    if (DELETE_COMMANDS.some(cmd => text.toLowerCase().startsWith(cmd))) {
       const partes = text.trim().split(" ");
       const indice = Number(partes[1]);
 
@@ -150,12 +161,19 @@ ${lista.join("\n")}
         .eq("id", item.id);
 
       if (error) {
-        console.log(`[${requestId}] ❌ ERRO AO DELETAR:`, error);
+        // console.log(`[${requestId}] ❌ ERRO AO DELETAR:`, error);
         await sendMessage(from, "❌ Erro ao deletar item");
         return res.sendStatus(200);
       }
 
-      await sendMessage(from, `✅ Item ${indice} deletado com sucesso.`);
+      await sendMessage(from, 
+        `❌ Item removido com sucesso
+━━━━━━━━━━━━━━━
+📁 ${item.name}
+✍🏻 ${item.description}
+💰 ${formatCurrency(item.amount)}
+━━━━━━━━━━━━━━━
+        `.trim());
 
       return res.sendStatus(200);
     }
@@ -163,7 +181,7 @@ ${lista.join("\n")}
     // =========================
     // 📄 COMANDO PDF
     // =========================
-    if (text.toLowerCase().startsWith("pdf")) {
+    if (PDF_COMMANDS.some(cmd => text.toLowerCase().startsWith(cmd))) {
       const partes = text.trim().split(" ");
       const nome = partes[1];
 
@@ -171,7 +189,6 @@ ${lista.join("\n")}
         await sendMessage(from, "❌ Informe o nome. Ex: pdf Nome");
         return res.sendStatus(200);
       }
-
       const { data: personData, error: personError } = await supabase
         .from("people")
         .select("*")
@@ -229,10 +246,10 @@ ${lista.join("\n")}
     res.sendStatus(200);
 
   } catch (error) {
-    console.log(`[${requestId}] 💥 ERRO GERAL:`, error.message);
+    // console.log(`[${requestId}] 💥 ERRO GERAL:`, error.message);
     console.error(error);
     res.sendStatus(500);
   }
 }
 
-module.exports = { webhook };
+export { webhook };

@@ -1,5 +1,5 @@
 function parseMessage(text) {
-  console.log("🧩 Parser recebeu:", text);
+  // console.log("🧩 Parser recebeu:", text);
 
   if (!text) {
     return { error: "Mensagem vazia" };
@@ -10,7 +10,7 @@ function parseMessage(text) {
     .map(l => l.trim())
     .filter(l => l !== "");
 
-  console.log("🧩 Linhas:", lines);
+  // console.log("🧩 Linhas:", lines);
 
   if (lines.length < 3) {
     return { error: "Formato inválido. Use:\nNome\nDescrição\nValor" };
@@ -22,7 +22,7 @@ function parseMessage(text) {
   const date = lines[3] || new Date().toISOString();
   const amount = parseFloat(rawAmount);
 
-  console.log("🧩 Dados extraídos:", { name, description, amount, date });
+  // console.log("🧩 Dados extraídos:", { name, description, amount, date });
 
   if (!name) return { error: "Nome obrigatório" };
   if (!description) return { error: "Descrição obrigatória" };
@@ -37,4 +37,4 @@ function parseMessage(text) {
   };
 }
 
-module.exports = { parseMessage };
+export { parseMessage };
